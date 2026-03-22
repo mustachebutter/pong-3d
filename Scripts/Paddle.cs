@@ -5,11 +5,10 @@ public class Paddle : MonoBehaviour
 {
     private Vector2 moveInput;
     private Rigidbody rb;
-    [SerializeField]
-    private Ball ball;
-
+    [SerializeField] private Ball ball;
+    [SerializeField] private bool bIsPlayer = false;
+    [SerializeField] private float speed = 50.0f;
     private bool bHasLaunchedBall = false;
-    public float speed;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -17,26 +16,45 @@ public class Paddle : MonoBehaviour
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
+        Vector3 moveInput = Vector3.zero;
         
-    }
-
-    public void OnMove(InputAction.CallbackContext context)
-    {
-        moveInput = context.ReadValue<Vector2>();
-        Debug.Log($"Move: {moveInput}");
-        Vector3 move = new Vector3(moveInput.x, 0, 0).normalized;
-        rb.linearVelocity = move * speed;
-    }
-
-    public void OnJump(InputAction.CallbackContext context)
-    {
-        if (!bHasLaunchedBall)
+        if (bIsPlayer)
         {
-            Debug.Log("LAUNCH!");
-            ball.Launch();
-            bHasLaunchedBall = true;
+            if(Input.GetKey(KeyCode.A))
+            {
+                moveInput = Vector3.left;
+            }
+            else if (Input.GetKey(KeyCode.D))
+            {
+                moveInput = Vector3.right;
+            }
         }
+        else
+        {
+            if(Input.GetKey(KeyCode.LeftArrow))
+            {
+                moveInput = Vector3.left;
+            }
+            else if (Input.GetKey(KeyCode.RightArrow))
+            {
+                moveInput = Vector3.right;
+            }
+        }
+
+        if (Input.GetKey(KeyCode.Space))
+        {
+            if (!bHasLaunchedBall)
+            {
+                Debug.Log("LAUNCH!");
+                ball.Launch();
+                bHasLaunchedBall = true;
+            }
+        }
+
+        Vector3 move = new Vector3(moveInput.x, 0, 0).normalized;
+        Debug.Log($"Move: {move}");
+        rb.linearVelocity = move * speed;
     }
 }

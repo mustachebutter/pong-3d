@@ -26,7 +26,7 @@ public class Ball : MonoBehaviour
 
     public void Launch()
     {
-        Vector3 direction = new Vector3(0, 0, -1.0f).normalized;
+        Vector3 direction = new Vector3(1.0f, 0, -1.0f).normalized;
         rb.AddForce(direction * speed, ForceMode.VelocityChange);
     }
 }

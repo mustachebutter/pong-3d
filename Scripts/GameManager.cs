@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour
     public GameObject ball;
     public GameObject playerScoreTrigger;
     public GameObject aiScoreTrigger;
+    public UIManager uiManager;
     private int playerScore = 0;
     private int aiScore = 0;
     private bool bIsPlayerLastRoundWon = false;
@@ -21,16 +22,16 @@ public class GameManager : MonoBehaviour
         playerST.OnScoreTriggered += () =>
         {
             Debug.Log("Player scored");
-            Time.timeScale = 0;
-            playerScore++;
+            uiManager.SetScore(true, ++playerScore);
             playerST.ResetTrigger();
+            Time.timeScale = 0;
         };
         aiST.OnScoreTriggered += () =>
         {
             Debug.Log("AI scored");
-            Time.timeScale = 0;
-            aiScore++;
+            uiManager.SetScore(false, ++aiScore);
             aiST.ResetTrigger();
+            Time.timeScale = 0;
         };
     }
 

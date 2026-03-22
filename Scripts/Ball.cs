@@ -21,7 +21,7 @@ public class Ball : MonoBehaviour
     void FixedUpdate()
     {
         rb.linearVelocity = rb.linearVelocity.normalized * speed;
-        Debug.Log(rb.linearVelocity);
+        // Debug.Log(rb.linearVelocity);
     }
 
     public void Launch()

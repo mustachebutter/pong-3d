@@ -1,38 +1,59 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    private struct RoundData
+    {
+        public bool bIsPlayer1WonLastRound;
+        public bool bHasLaunchedBall;
+        public int playerScore;
+        public int aiScore;
+        public int roundNumber;
+        public int level;
+        public RoundData(int roundNumber_, int level_)
+        {
+            bIsPlayer1WonLastRound = false;
+            bHasLaunchedBall = false;
+            playerScore = 0;
+            aiScore = 0;
+            roundNumber = roundNumber_;
+            level = level_;
+        }
+    }
     private bool bIsRoundWon;
     public GameObject paddlePlayer;
     public GameObject paddleAI;
-    public GameObject ball;
-    public GameObject playerScoreTrigger;
-    public GameObject aiScoreTrigger;
+    public Ball ball;
+    public ScoreTrigger player1ScoreTrigger;
+    public ScoreTrigger player2ScoreTrigger;
     public UIManager uiManager;
-    private int playerScore = 0;
-    private int aiScore = 0;
-    private bool bIsPlayerLastRoundWon = false;
     public const int WINNING_SCORE = 5;
+    private RoundData roundData;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        ScoreTrigger playerST = playerScoreTrigger.GetComponent<ScoreTrigger>();
-        ScoreTrigger aiST = aiScoreTrigger.GetComponent<ScoreTrigger>();
+        roundData = new RoundData(roundNumber_: 1, level_: 1);
+        player1ScoreTrigger.OnScoreTriggered += () =>
+        {
+            uiManager.SetGeneralText("PLAYER 1 SCORED");
+            uiManager.SetScore(true, ++roundData.playerScore);
+            roundData.bIsPlayer1WonLastRound = true;
+            Time.timeScale = 0;
+            OnEndRound();
+        };
 
-        playerST.OnScoreTriggered += () =>
+        player2ScoreTrigger.OnScoreTriggered += () =>
         {
-            Debug.Log("Player scored");
-            uiManager.SetScore(true, ++playerScore);
-            playerST.ResetTrigger();
+            uiManager.SetGeneralText("PLAYER 2 SCORED");
+            uiManager.SetScore(false, ++roundData.aiScore);
+            roundData.bIsPlayer1WonLastRound = false;
             Time.timeScale = 0;
+            OnEndRound();
         };
-        aiST.OnScoreTriggered += () =>
-        {
-            Debug.Log("AI scored");
-            uiManager.SetScore(false, ++aiScore);
-            aiST.ResetTrigger();
-            Time.timeScale = 0;
-        };
+
+        OnStartRound();
     }
 
     // Update is called once per frame
@@ -41,26 +62,54 @@ public class GameManager : MonoBehaviour
         
     }
 
-    void OnScore()
+    public void OnStartRound()
     {
-        // if (playerScore == WINNING_SCORE)
-        if (playerScore == 1)
+        Debug.Log("START ROUND");
+        Time.timeScale = 1.0f;
+        ball.ResetBall();
+        player1ScoreTrigger.ResetTrigger();
+        player2ScoreTrigger.ResetTrigger();  
+        StartCoroutine(DelayTimer(3.0f, LaunchBall));
+    }
+
+    public void LaunchBall()
+    {
+        if (!roundData.bHasLaunchedBall)
+        {
+            Debug.Log("LAUNCH!");
+            ball.Launch(roundData.bIsPlayer1WonLastRound);
+            roundData.bHasLaunchedBall = true;
+        }
+    }
+    
+    public void OnEndRound()
+    {
+        if (roundData.playerScore == WINNING_SCORE)
+        // if (roundData.playerScore == 1)
         {
             Debug.Log("You win!");
         }
-        else if (aiScore == WINNING_SCORE)
+        else if (roundData.aiScore == WINNING_SCORE)
         {
             Debug.Log ("You lost :(");
         }
         else
         {
-            // Reset Ball
-            // Reset time scale
+            roundData.roundNumber++;
+            if (roundData.roundNumber == 5)
+            {
+                roundData.level++;
+            }
+            StartCoroutine(DelayTimer(5.0f, OnStartRound));
         }
-
-        
-
     }
-
     
+    IEnumerator DelayTimer(float seconds, Action method)
+    {
+        Debug.Log("Starting delay timer");
+        yield return new WaitForSecondsRealtime(seconds);
+
+        Debug.Log("Finished delaying");
+        method();
+    }
 }

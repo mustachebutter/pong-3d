@@ -43,16 +43,6 @@ public class Paddle : MonoBehaviour
             }
         }
 
-        if (Input.GetKey(KeyCode.Space))
-        {
-            if (!bHasLaunchedBall)
-            {
-                Debug.Log("LAUNCH!");
-                ball.Launch();
-                bHasLaunchedBall = true;
-            }
-        }
-
         Vector3 move = new Vector3(moveInput.x, 0, 0).normalized;
         Debug.Log($"Move: {move}");
         rb.linearVelocity = move * speed;

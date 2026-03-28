@@ -44,7 +44,6 @@ public class Paddle : MonoBehaviour
         }
 
         Vector3 move = new Vector3(moveInput.x, 0, 0).normalized;
-        Debug.Log($"Move: {move}");
         rb.linearVelocity = move * speed;
     }
 }

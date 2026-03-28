@@ -1,13 +1,16 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager Instance;
     private struct RoundData
     {
         public bool bIsPlayer1WonLastRound;
         public bool bHasLaunchedBall;
+        public bool bIsNextLevel;
         public int playerScore;
         public int aiScore;
         public int roundNumber;
@@ -16,6 +19,7 @@ public class GameManager : MonoBehaviour
         {
             bIsPlayer1WonLastRound = false;
             bHasLaunchedBall = false;
+            bIsNextLevel = false;
             playerScore = 0;
             aiScore = 0;
             roundNumber = roundNumber_;
@@ -31,9 +35,25 @@ public class GameManager : MonoBehaviour
     public UIManager uiManager;
     public const int WINNING_SCORE = 5;
     private RoundData roundData;
+
+    void Awake()
+    {
+        Debug.Log("<color=red>Awake</color>");
+        if (Instance != null)
+        {
+            Debug.Log($"<color=green>{Instance.roundData.level}</color>");
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        Debug.Log($"<color=green>{Instance.roundData.level}</color>");
+        DontDestroyOnLoad(gameObject);
+    }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        Debug.Log("<color=red>Start</color>");
         roundData = new RoundData(roundNumber_: 1, level_: 1);
         player1ScoreTrigger.OnScoreTriggered += () =>
         {
@@ -64,6 +84,10 @@ public class GameManager : MonoBehaviour
 
     public void OnStartRound()
     {
+        if (roundData.bIsNextLevel)
+        {
+            LoadNextLevel();
+        }
         Debug.Log("START ROUND");
         Time.timeScale = 1.0f;
         ball.ResetBall();
@@ -84,24 +108,20 @@ public class GameManager : MonoBehaviour
     
     public void OnEndRound()
     {
-        if (roundData.playerScore == WINNING_SCORE)
-        // if (roundData.playerScore == 1)
+        if (roundData.playerScore == 1)
         {
             Debug.Log("You win!");
+            // Load next level
+            roundData.level++;
+            roundData.bIsNextLevel = true;
         }
         else if (roundData.aiScore == WINNING_SCORE)
         {
             Debug.Log ("You lost :(");
         }
-        else
-        {
-            roundData.roundNumber++;
-            if (roundData.roundNumber == 5)
-            {
-                roundData.level++;
-            }
-            StartCoroutine(DelayTimer(5.0f, OnStartRound));
-        }
+
+        roundData.roundNumber++;
+        StartCoroutine(DelayTimer(5.0f, OnStartRound));
     }
     
     IEnumerator DelayTimer(float seconds, Action method)
@@ -112,4 +132,34 @@ public class GameManager : MonoBehaviour
         Debug.Log("Finished delaying");
         method();
     }
+    public void LoadNextLevel()
+    {
+        LoadNextScene();
+        roundData.aiScore = 0;
+        roundData.playerScore = 0;
+        roundData.bIsNextLevel = false;
+    }
+    public void LoadScene(string sceneName)
+    {
+        SceneManager.LoadScene(sceneName);
+    }
+
+    public void ReloadScene()
+    {
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+        SceneManager.LoadScene(currentSceneIndex);
+    }
+
+    public void LoadNextScene()
+    {
+        int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
+
+        if (nextSceneIndex >= SceneManager.sceneCountInBuildSettings)
+        {
+            nextSceneIndex = 0;
+        }
+
+        SceneManager.LoadScene(nextSceneIndex);
+    }
+
 }

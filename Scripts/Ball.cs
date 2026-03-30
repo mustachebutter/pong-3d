@@ -36,6 +36,6 @@ public class Ball : MonoBehaviour
 
     public void ResetBall()
     {
-        transform.position = originalPosition;
+        transform.position = new Vector3(originalPosition.x, 0.5f, originalPosition.z);
     }
 }

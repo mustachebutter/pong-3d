@@ -46,6 +46,9 @@ public class GameManager : MonoBehaviour
             {
                 switch (child.name)
                 {
+                    case "Ball":
+                        Instance.ball = child.GetComponent<Ball>();
+                    break;
                     case "Player1Triggers":
                         Instance.player1ScoreTriggers = child.GetComponentsInChildren<ScoreTrigger>(true);
                     break;
@@ -71,8 +74,8 @@ public class GameManager : MonoBehaviour
                 var child = transform.GetChild(i);
                 child.SetParent(Instance.transform);
             }
-
             Destroy(gameObject);
+            OnStartRound();
             return;
         }
 
@@ -80,6 +83,7 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         roundData = new RoundData(roundNumber_: 1, level_: 1);
+        ball = transform.Find("Ball").GetComponent<Ball>();
         player1ScoreTriggers = transform.Find("Player1Triggers").GetComponentsInChildren<ScoreTrigger>(true);
         player2ScoreTriggers = transform.Find("Player2Triggers").GetComponentsInChildren<ScoreTrigger>(true);
         player1Paddles = transform.Find("Player1Paddles").GetComponentsInChildren<Paddle>(true);
@@ -99,6 +103,11 @@ public class GameManager : MonoBehaviour
 
     public void OnStartRound()
     {
+        if (roundData.bIsNextLevel)
+        {
+            LoadNextLevel();
+        }
+        
         foreach (var trigger in player1ScoreTriggers)
         {
             trigger.OnScoreTriggered += () =>
@@ -124,10 +133,6 @@ public class GameManager : MonoBehaviour
             };
         }
         
-        if (roundData.bIsNextLevel)
-        {
-            LoadNextLevel();
-        }
 
         Debug.Log("<color=red>Start</color>");
         Time.timeScale = 1.0f;
@@ -179,6 +184,7 @@ public class GameManager : MonoBehaviour
         roundData.aiScore = 0;
         roundData.playerScore = 0;
         roundData.bIsNextLevel = false;
+        roundData.bHasLaunchedBall = false;
     }
     public void LoadScene(string sceneName)
     {

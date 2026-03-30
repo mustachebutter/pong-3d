@@ -3,10 +3,11 @@ using UnityEngine.InputSystem;
 
 public class Paddle : MonoBehaviour
 {
-    private Vector2 moveInput;
+    private Vector3 moveInput;
     private Rigidbody rb;
     [SerializeField] private Ball ball;
     [SerializeField] private bool bIsPlayer = false;
+    [SerializeField] private bool bIsSidePaddle = false;
     [SerializeField] private float speed = 50.0f;
     private bool bHasLaunchedBall = false;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -43,7 +44,12 @@ public class Paddle : MonoBehaviour
             }
         }
 
-        Vector3 move = new Vector3(moveInput.x, 0, 0).normalized;
-        rb.linearVelocity = move * speed;
+        Vector3 move = new Vector3((bIsSidePaddle ? -moveInput.x : moveInput.x) * speed, 0.0f, 0.0f);
+        Vector3 globalMove = transform.TransformDirection(move);
+        rb.linearVelocity = new Vector3(globalMove.x, 0.0f, globalMove.z);
+    }
+
+    void FixedUpdate()
+    {
     }
 }

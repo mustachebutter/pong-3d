@@ -35,6 +35,8 @@ public class GameManager : MonoBehaviour
     public UIManager uiManager;
     public const int WINNING_SCORE = 5;
     private RoundData roundData;
+    private ScoreTrigger.ScoreHandler _p1ScoreHandler;
+    private ScoreTrigger.ScoreHandler _p2ScoreHandler;
 
     void Awake()
     {
@@ -75,7 +77,8 @@ public class GameManager : MonoBehaviour
                 child.SetParent(Instance.transform);
             }
             Destroy(gameObject);
-            OnStartRound();
+            Instance.OnInit();
+            Instance.OnStartRound();
             return;
         }
 
@@ -88,6 +91,10 @@ public class GameManager : MonoBehaviour
         player2ScoreTriggers = transform.Find("Player2Triggers").GetComponentsInChildren<ScoreTrigger>(true);
         player1Paddles = transform.Find("Player1Paddles").GetComponentsInChildren<Paddle>(true);
         player2Paddles = transform.Find("Player2Paddles").GetComponentsInChildren<Paddle>(true);
+        _p1ScoreHandler = () => HandlePlayerScoring(true);
+        _p2ScoreHandler = () => HandlePlayerScoring(false);
+
+        OnInit();
         OnStartRound();
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -101,73 +108,83 @@ public class GameManager : MonoBehaviour
         
     }
 
+    public void OnInit()
+    {
+        Debug.Log("<color=red>Init</color>");
+        foreach (var trigger in Instance.player1ScoreTriggers)
+        {
+            trigger.OnScoreTriggered -= _p1ScoreHandler;
+            trigger.OnScoreTriggered += _p1ScoreHandler;
+        }
+
+        foreach (var trigger in Instance.player2ScoreTriggers)
+        {
+            trigger.OnScoreTriggered -= _p2ScoreHandler;
+            trigger.OnScoreTriggered += _p2ScoreHandler;
+        }
+    }
+
+    private void HandlePlayerScoring(bool bIsPlayer1)
+    {        
+        if (bIsPlayer1)
+        {
+            uiManager.SetGeneralText("PLAYER 1 SCORED");
+            uiManager.SetScore(bIsPlayer1, ++roundData.playerScore);
+            roundData.bIsPlayer1WonLastRound = true;
+        }
+        else
+        {
+            uiManager.SetGeneralText("PLAYER 2 SCORED");
+            uiManager.SetScore(bIsPlayer1, ++roundData.aiScore);
+            roundData.bIsPlayer1WonLastRound = false;
+        }
+        
+        Time.timeScale = 0;
+        OnEndRound();
+    }
+
     public void OnStartRound()
     {
-        if (roundData.bIsNextLevel)
-        {
-            LoadNextLevel();
-        }
-        
-        foreach (var trigger in player1ScoreTriggers)
-        {
-            trigger.OnScoreTriggered += () =>
-            {
-                uiManager.SetGeneralText("PLAYER 1 SCORED");
-                uiManager.SetScore(true, ++roundData.playerScore);
-                roundData.bIsPlayer1WonLastRound = true;
-                Time.timeScale = 0;
-                OnEndRound();
-            };
-        }
-
-        foreach (var trigger in player2ScoreTriggers)
-        {
-            
-            trigger.OnScoreTriggered += () =>
-            {
-                uiManager.SetGeneralText("PLAYER 2 SCORED");
-                uiManager.SetScore(false, ++roundData.aiScore);
-                roundData.bIsPlayer1WonLastRound = false;
-                Time.timeScale = 0;
-                OnEndRound();
-            };
-        }
-        
-
         Debug.Log("<color=red>Start</color>");
+        if (Instance.roundData.bIsNextLevel)
+        {
+            Instance.LoadNextLevel();
+        }
+        
         Time.timeScale = 1.0f;
-        ball.ResetBall();
-        player1ScoreTriggers.ToList<ScoreTrigger>().ForEach(t => t.ResetTrigger());
-        player2ScoreTriggers.ToList<ScoreTrigger>().ForEach(t => t.ResetTrigger());
-        StartCoroutine(DelayTimer(3.0f, LaunchBall));
+        Instance.ball.ResetBall();
+        Instance.player1ScoreTriggers.ToList<ScoreTrigger>().ForEach(t => t.ResetTrigger());
+        Instance.player2ScoreTriggers.ToList<ScoreTrigger>().ForEach(t => t.ResetTrigger());
+        StartCoroutine(Instance.DelayTimer(3.0f, Instance.LaunchBall));
     }
 
     public void LaunchBall()
     {
-        if (!roundData.bHasLaunchedBall)
+        if (!Instance.roundData.bHasLaunchedBall)
         {
             Debug.Log("LAUNCH!");
-            ball.Launch(roundData.bIsPlayer1WonLastRound);
-            roundData.bHasLaunchedBall = true;
+            ball.Launch(Instance.roundData.bIsPlayer1WonLastRound);
+            Instance.roundData.bHasLaunchedBall = true;
         }
     }
     
     public void OnEndRound()
     {
-        if (roundData.playerScore == 1)
+        // if (Instance.roundData.playerScore == WINNING_SCORE)
+        if (Instance.roundData.playerScore == 1)
         {
             Debug.Log("You win!");
             // Load next level
-            roundData.level++;
-            roundData.bIsNextLevel = true;
+            Instance.roundData.level++;
+            Instance.roundData.bIsNextLevel = true;
         }
-        else if (roundData.aiScore == WINNING_SCORE)
+        else if (Instance.roundData.aiScore == WINNING_SCORE)
         {
             Debug.Log ("You lost :(");
         }
 
-        roundData.roundNumber++;
-        StartCoroutine(DelayTimer(5.0f, OnStartRound));
+        Instance.roundData.roundNumber++;
+        StartCoroutine(Instance.DelayTimer(5.0f, Instance.OnStartRound));
     }
     
     IEnumerator DelayTimer(float seconds, Action method)
@@ -181,10 +198,10 @@ public class GameManager : MonoBehaviour
     public void LoadNextLevel()
     {
         LoadNextScene();
-        roundData.aiScore = 0;
-        roundData.playerScore = 0;
-        roundData.bIsNextLevel = false;
-        roundData.bHasLaunchedBall = false;
+        Instance.roundData.aiScore = 0;
+        Instance.roundData.playerScore = 0;
+        Instance.roundData.bIsNextLevel = false;
+        Instance.roundData.bHasLaunchedBall = false;
     }
     public void LoadScene(string sceneName)
     {
